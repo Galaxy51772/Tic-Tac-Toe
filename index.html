@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10131d">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --page: #10131d;
+            --panel: #191e2b;
+            --cell: #222939;
+            --cell-hover: #2b3447;
+            --text: #f5f6fb;
+            --muted: #9da7bb;
+            --cyan: #66e4dc;
+            --pink: #ff83ab;
+            --border: rgba(255, 255, 255, .09);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: 28px 16px;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse at 18% 12%, rgba(80, 107, 181, .16), transparent 38%),
+                radial-gradient(ellipse at 88% 84%, rgba(255, 103, 158, .1), transparent 34%),
+                var(--page);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .game {
+            width: min(100%, 440px);
+            padding: clamp(22px, 6vw, 34px);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            background: rgba(25, 30, 43, .94);
+            box-shadow: 0 28px 80px rgba(0, 0, 0, .35);
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--cyan);
+            font-size: .73rem;
+            font-weight: 800;
+            letter-spacing: .16em;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.8rem, 8vw, 2.45rem);
+            letter-spacing: -.055em;
+            text-align: center;
+        }
+
+        .intro {
+            margin: 10px auto 24px;
+            max-width: 31ch;
+            color: var(--muted);
+            font-size: .94rem;
+            line-height: 1.55;
+            text-align: center;
+        }
+
+        .status {
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .035);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .status-mark { font-size: 1.25rem; }
+        .status-mark.x, .mark.x { color: var(--cyan); }
+        .status-mark.o, .mark.o { color: var(--pink); }
+
+        .board {
+            display: grid;
+            grid-template: repeat(3, minmax(0, 1fr)) / repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            display: grid;
+            place-items: center;
+            min-width: 0;
+            min-height: 0;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: var(--cell);
+            color: var(--text);
+            cursor: pointer;
+            transition: background .16s ease, transform .16s ease, border-color .16s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .cell:not(:disabled):hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, .2);
+            background: var(--cell-hover);
+        }
+
+        .cell:focus-visible, .reset:focus-visible {
+            outline: 3px solid var(--cyan);
+            outline-offset: 3px;
+        }
+
+        .cell:disabled { cursor: default; }
+
+        .mark {
+            font-size: clamp(3rem, 16vw, 5rem);
+            font-weight: 800;
+            line-height: 1;
+            animation: pop .18s ease-out;
+        }
+
+        .cell.oldest {
+            border-color: rgba(255, 255, 255, .17);
+            background: #2a3040;
+        }
+
+        .cell.oldest .mark { opacity: .48; }
+
+        .cell.winning {
+            border-color: var(--cyan);
+            background: rgba(102, 228, 220, .16);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 18px;
+            min-height: 22px;
+            margin-top: 15px;
+            color: var(--muted);
+            font-size: .8rem;
+        }
+
+        .legend strong { color: var(--text); }
+        .legend .x { color: var(--cyan); }
+        .legend .o { color: var(--pink); }
+
+        .reset {
+            width: 100%;
+            min-height: 48px;
+            margin-top: 22px;
+            border: 0;
+            border-radius: 14px;
+            background: var(--cyan);
+            color: #101820;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 800;
+            transition: filter .16s ease, transform .16s ease;
+        }
+
+        .reset:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+        @keyframes pop {
+            from { opacity: .35; transform: scale(.65); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="game">
+        <h1>Tic-Tac-Toe</h1>
+        <br>
+        <div class="status" id="status" role="status" aria-live="polite">
+            <span class="status-mark x" id="status-mark" aria-hidden="true">X</span>
+            <span id="status-text">X's turn</span>
+        </div>
+
+        <div class="board" id="board" role="group" aria-label="Tic-tac-toe board"></div>
+        </div>
+        <button class="reset" id="reset" type="button">New game</button>
+    </main>
+
+    <script>
+        const boardElement = document.getElementById("board");
+        const statusMark = document.getElementById("status-mark");
+        const statusText = document.getElementById("status-text");
+        const resetButton = document.getElementById("reset");
+        const winningLines = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+        const cells = Array.from({ length: 9 }, (_, index) => {
+            const cell = document.createElement("button");
+            cell.type = "button";
+            cell.className = "cell";
+            cell.dataset.value = "";
+            cell.addEventListener("click", () => play(index));
+            boardElement.append(cell);
+            return cell;
+        });
+
+        let squares;
+        let moveOrder;
+        let currentPlayer;
+        let gameOver;
+
+        function startGame() {
+            squares = Array(9).fill(null);
+            moveOrder = { X: [], O: [] };
+            currentPlayer = "X";
+            gameOver = false;
+            render();
+            setStatus("X's turn", "X");
+        }
+
+        function setStatus(message, player) {
+            statusText.textContent = message;
+            statusMark.textContent = player || "";
+            statusMark.className = `status-mark${player ? ` ${player.toLowerCase()}` : ""}`;
+        }
+
+        function getWinner() {
+            return winningLines.find(([a, b, c]) =>
+                squares[a] && squares[a] === squares[b] && squares[a] === squares[c]
+            );
+        }
+
+        function play(index) {
+            if (gameOver || squares[index]) return;
+
+            const player = currentPlayer;
+            const oldest = moveOrder[player].length === 3 ? moveOrder[player].shift() : null;
+            if (oldest !== null) squares[oldest] = null;
+
+            squares[index] = player;
+            moveOrder[player].push(index);
+
+            const winningLine = getWinner();
+            if (winningLine) {
+                gameOver = true;
+                render(winningLine);
+                setStatus(`${player} wins!`, player);
+                return;
+            }
+
+            currentPlayer = player === "X" ? "O" : "X";
+            render();
+            setStatus(`${currentPlayer}'s turn`, currentPlayer);
+        }
+
+        function render(winningLine = []) {
+            squares.forEach((value, index) => {
+                const cell = cells[index];
+                const renderedValue = value || "";
+                if (cell.dataset.value !== renderedValue) {
+                    cell.replaceChildren();
+                    if (value) {
+                        const mark = document.createElement("span");
+                        mark.className = `mark ${value.toLowerCase()}`;
+                        mark.textContent = value;
+                        cell.append(mark);
+                    }
+                    cell.dataset.value = renderedValue;
+                }
+
+                cell.disabled = gameOver || value !== null;
+                cell.setAttribute("aria-label", value
+                    ? `Square ${index + 1}, ${value}`
+                    : `Square ${index + 1}, empty`);
+                cell.classList.toggle("winning", winningLine.includes(index));
+                cell.classList.toggle("oldest", Boolean(value && moveOrder[value][0] === index));
+            });
+        }
+
+        resetButton.addEventListener("click", startGame);
+        startGame();
+    </script>
+</body>
+</html>
